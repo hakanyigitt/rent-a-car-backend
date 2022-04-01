@@ -1,9 +1,19 @@
 ﻿using Business.Abstract;
+using Business.BusinessAspects.Autofac;
+using Business.Constans;
+using Business.ValidationRules.FluentValidation;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Performance;
+using Core.Aspects.Autofac.Transaction;
+using Core.Aspects.Autofac.Validation;
+using Core.Utilities.Business;
+using Core.Utilities.Results;
 using DataAccess.Abstract;
 using Entities.Concrete;
 using Entities.DTOs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Business.Concrete
@@ -17,62 +27,88 @@ namespace Business.Concrete
             _carDal = carDal;
         }
 
-        public List<Car> GetAll()
+        [CacheAspect]
+        public IDataResult<List<Car>> GetAll()
         {
-            return _carDal.GetAll();
-        }
-
-        public List<Car> GetCarsByBrandId(int id)
-        {
-            return _carDal.GetAll(p => p.BrandId == id);
-        }
-
-        public List<Car> GetCarsByColorId(int id)
-        {
-            return _carDal.GetAll(p => p.ColorId == id);
-        }
-        public void Add(Car car)
-        {
-            if(car.Description.Length >= 2)
+            if(DateTime.Now.Hour == 1)
             {
-                if(car.DailyPrice > 0)
-                {
-                    _carDal.Add(car);
-                }
-                else
-                {
-                    Console.WriteLine("Araba günlük fiyatı 0'dan büyük olmalıdır");
-                }
+                return new ErrorDataResult<List<Car>>(Messages.MaintenanceTime);
             }
-            else
+            return new SuccessDataResult<List<Car>>(_carDal.GetAll(), Messages.CarsListed);
+        }
+
+        public IDataResult<List<Car>> GetCarsByBrandId(int id)
+        {
+            return new SuccessDataResult<List<Car>>(_carDal.GetAll(p => p.BrandId == id));
+        }
+
+        public IDataResult<List<Car>> GetCarsByColorId(int id)
+        {
+            return new SuccessDataResult<List<Car>>(_carDal.GetAll(p=>p.ColorId == id));
+        }
+
+        [SecuredOperation("car.add, admin")]
+        [ValidationAspect(typeof(CarValidator))]
+        [CacheRemoveAspect("ICarService.Get")]
+        public IResult Add(Car car)
+        {
+            IResult result = BusinessRules.Run(CheckIfCarNameExists(car.Description));
+
+            if (result != null)
             {
-                Console.WriteLine("Araba ismi minimum 2 karakter olmalıdır");
+                return result;
             }
-        }
-
-        public Car GetById(int id)
-        {
-            return _carDal.Get(c => c.Id == id);
-        }
-
-        public void Insert(Car car)
-        {
             _carDal.Add(car);
+            return new SuccessResult(Messages.CarAdded);
         }
 
-        public void Update(Car car)
+        [CacheAspect]
+        [PerformanceAspect(5)]
+        public IDataResult<Car> GetById(int id)
+        {
+            return new SuccessDataResult<Car>(_carDal.Get(p => p.Id == id));
+        }
+
+        [CacheRemoveAspect("ICarService.Get")]
+        public IResult Update(Car car)
         {
             _carDal.Update(car);
+            return new SuccessResult(Messages.CarUpdated);
         }
 
-        public void Delete(Car car)
+        [CacheRemoveAspect("ICarService.Get")]
+        public IResult Delete(Car car)
         {
             _carDal.Delete(car);
+            return new SuccessResult(Messages.CarDeleted);
         }
 
-        public List<CarDetailDto> GetCarDetailDtos()
+        [CacheAspect]
+        public IDataResult<List<CarDetailDto>> GetCarDetailDtos()
         {
-            return _carDal.GetCarDetails();
+            return new SuccessDataResult<List<CarDetailDto>>(_carDal.GetCarDetails(),Messages.CarDetailListed);
+        }
+        private IResult CheckIfCarNameExists(string carName)
+        {
+            var result = _carDal.GetAll(p => p.Description == carName).Any();
+            if (result)
+            {
+                return new ErrorResult(Messages.CarNameAlreadyExists);
+            }
+            return new SuccessResult();
+        }
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Car car)
+        {
+            Add(car);
+            if(car.DailyPrice < 100)
+            {
+                throw new Exception("");
+            }
+            Add(car);
+
+            return null;
         }
     }
 }

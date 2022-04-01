@@ -16,7 +16,7 @@ namespace ConsoleUI
             //CarGetById(carManager);
             //CarUpdate(carManager);
             //CarDelete(carManager);
-            //CarGetAll(carManager);
+            CarGetAll(carManager);
 
             ColorManager colorManager = new ColorManager(new EfColarDal());
             //ColorInsert(colorManager);
@@ -32,29 +32,47 @@ namespace ConsoleUI
             //BrandDelete(brandManager);
             //BrandGetAll(brandManager);
 
-            foreach (var car in carManager.GetCarDetailDtos())
+            CustomerManager customerManager = new CustomerManager(new EfCustomerDal());
+            //CustomerAdd(customerManager);
+            //CustomerGetAll(customerManager);
+
+            RentalManager rentalManager = new RentalManager(new EfRentalDal());
+            
+
+
+        }
+
+        private static void CustomerAdd(CustomerManager customerManager)
+        {
+            customerManager.Insert(new Customer { UserId = 1, CompanyName = "KodlamaIO" });
+        }
+
+        private static void CustomerGetAll(CustomerManager customerManager)
+        {
+            var resultCustomerListed = customerManager.GetAll().Data;
+            foreach (var customer in resultCustomerListed)
             {
-                Console.WriteLine(car.BrandName + " - " + car.CarName + " / " + car.ColorName + " / " + car.DailyPrice+"TL");
+                Console.WriteLine(customer.UserId + " " + customer.CompanyName);
             }
         }
 
         private static void BrandDelete(BrandManager brandManager)
         {
             var result = brandManager.GetById(5);
-            brandManager.Delete(result);
+            brandManager.Delete(result.Data);
         }
 
         private static void BrandUpdate(BrandManager brandManager)
         {
             var result = brandManager.GetById(3);
-            result.Name = "FIAT";
-            brandManager.Update(result);
+            result.Data.Name = "FIAT";
+            brandManager.Update(result.Data);
         }
 
         private static void BrandGetById(BrandManager brandManager)
         {
             var result = brandManager.GetById(3);
-            Console.WriteLine(result.Name);
+            Console.WriteLine(result.Data.Name);
         }
 
         private static void BrandInsert(BrandManager brandManager)
@@ -64,7 +82,7 @@ namespace ConsoleUI
 
         private static void BrandGetAll(BrandManager brandManager)
         {
-            foreach (Brand brand in brandManager.GetAll())
+            foreach (Brand brand in brandManager.GetAll().Data)
             {
                 Console.WriteLine("Id : " + brand.Id + " " + brand.Name);
             }
@@ -73,20 +91,20 @@ namespace ConsoleUI
         private static void ColorDelete(ColorManager colorManager)
         {
             var result = colorManager.GetById(5);
-            colorManager.Delete(result);
+            colorManager.Delete(result.Data);
         }
 
         private static void ColorUpdate(ColorManager colorManager)
         {
             var result = colorManager.GetById(6);
-            result.Name = "Gray";
-            colorManager.Update(result);
+            result.Data.Name = "Gray";
+            colorManager.Update(result.Data);
         }
 
         private static void ColorGetById(ColorManager colorManager)
         {
             var result = colorManager.GetById(4);
-            Console.WriteLine(result.Name);
+            Console.WriteLine(result.Data.Name);
         }
 
         private static void ColorInsert(ColorManager colorManager)
@@ -96,7 +114,8 @@ namespace ConsoleUI
 
         private static void ColorGetAll(ColorManager colorManager)
         {
-            foreach (Color color in colorManager.GetAll())
+            var result = colorManager.GetAll();
+            foreach (Color color in result.Data)
             {
                 Console.WriteLine("Id : " + color.Id + " " + color.Name);
             }
@@ -104,23 +123,33 @@ namespace ConsoleUI
 
         private static void CarDelete(CarManager carManager)
         {
-            carManager.Delete(carManager.GetById(8));
+            var result = carManager.GetById(1007);
+            carManager.Delete(result.Data);
         }
 
         private static void CarUpdate(CarManager carManager)
         {
             var result = carManager.GetById(8);
-            result.Description = "Fiat 500L";
-            result.DailyPrice = 500;
-            carManager.Update(result);
+            result.Data.Description = "Fiat 500L";
+            result.Data.DailyPrice = 500;
+            var resultCarUpdate = carManager.Update(result.Data);
         }
 
         private static void CarGetAll(CarManager carManager)
         {
-            foreach (var car in carManager.GetAll())
+            var result = carManager.GetAll();
+            if (result.Success)
             {
-                Console.WriteLine("Id : " + car.Id + " " + car.Description);
+                foreach (var car in result.Data)
+                {
+                    Console.WriteLine("Id : " + car.Id + " " + car.Description);
+                }
             }
+            else
+            {
+                Console.WriteLine(result.Message);
+            }
+            
         }
 
         private static void CarAdd(CarManager carManager)
@@ -131,7 +160,7 @@ namespace ConsoleUI
         private static void CarGetById(CarManager carManager)
         {
             var result = carManager.GetById(2);
-            Console.WriteLine(result.Description);
+            Console.WriteLine(result.Data.Description);
         }
     }
 }
