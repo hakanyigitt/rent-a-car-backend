@@ -48,6 +48,7 @@ namespace Business.Constans
         public static string CarImageDeleted = "Araba resmi silindi";
         public static string CarImageAdded = "Araba resmi eklendi";
         public static string CarImageUpdated = "Araba resmi güncellendi";
+        public static string CarImageLimitExeeded = "Bir araç için maksimum 5 resim eklenebilir";
 
         //Auth
         public static string AccessTokenCreated = "Token oluşturuldu";
