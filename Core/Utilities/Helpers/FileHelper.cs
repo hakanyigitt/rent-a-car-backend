@@ -33,7 +33,6 @@ namespace Core.Utilities.Helpers
             }
             catch (Exception exception)
             {
-
                 return new ErrorResult(exception.Message);
             }
             return new SuccessResult();
